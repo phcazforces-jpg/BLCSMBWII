@@ -1,4 +1,4 @@
-﻿schema_version: 1
+schema_version: 1
 workspace_root: ../..
 
 # New Super Mario Bros. Wii, North America rev 1 (SMNE01 v1).
@@ -21,7 +21,7 @@ memory:
 inputs:
   dol:
     path: ../game/main.dol
-    sha256: 6d755ec24c395fee600a856a85785e0e99c0b7ecb680d573a6cdd1aa6f7beee7
+    sha256: 166eb6b7cca21418e316a6cfbf1bfbf0a213eb8f6396d42126a1482bb764a955
   rel:
     path: ../game/nsmbw_linked.rel
     load_address: 0x807684C0

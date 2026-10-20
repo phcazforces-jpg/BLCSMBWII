@@ -72,6 +72,9 @@
 #include "system_bridge.h"
 #include "ppc_runtime.h"
 #include "aurora_events.h"
+#if defined(MKW_ENABLE_SFML)
+#include "platform/sfml_presenter.h"
+#endif
 #include "display_settings.h"
 #include "graphics_info.h"
 #include "wii_remote_input.h"
@@ -1588,6 +1591,10 @@ int RuntimeMain(int argc, char** argv) {
                   << (auroraInfo.gpuCompatActive ? "on" : "off") << std::endl;
         aurora_set_frame_worker_wait_callback(ServiceGuestTimingDuringAuroraFrameWait);
         GxGuestWrite::InstallAuroraHooks();
+#if defined(MKW_ENABLE_SFML)
+        SfmlPresenter::Initialize(auroraInfo.windowSize.width, auroraInfo.windowSize.height,
+                                  auroraConfig.appName ? auroraConfig.appName : "New Super Mario Bros. Wii");
+#endif
         DisplaySettings::OnFrameBoundary(auroraInfo.windowSize.native_fb_width,
                                          auroraInfo.windowSize.native_fb_height);
         settings_overlay::InitializeRuntimeSettings();

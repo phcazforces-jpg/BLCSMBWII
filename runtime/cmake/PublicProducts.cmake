@@ -90,6 +90,9 @@ elseif(MKW_PLATFORM_LINUX)
     # ${CMAKE_DL_LIBS} for music_attenuation.cpp's dlopen of libdbus-1 (MPRIS
     # media monitoring).
     target_link_libraries(mkw_runtime_common PRIVATE mkw::libco ${CMAKE_DL_LIBS})
+    if(MKW_ENABLE_SFML AND SFML_FOUND)
+        target_link_libraries(mkw_runtime_common PRIVATE SFML::Graphics SFML::Window SFML::System)
+    endif()
 elseif(MKW_PLATFORM_ANDROID)
     target_link_libraries(mkw_runtime_common PRIVATE android log ${CMAKE_DL_LIBS})
 endif()
@@ -244,6 +247,9 @@ function(mkw_configure_product target)
         # here for the same reason: music_attenuation.cpp's dlopen(libdbus-1) lives in those
         # objects (empty string on glibc >= 2.34, where dl* is in libc).
         target_link_libraries(${target} PRIVATE mkw::libco ${CMAKE_DL_LIBS})
+        if(MKW_ENABLE_SFML AND SFML_FOUND)
+            target_link_libraries(${target} PRIVATE SFML::Graphics SFML::Window SFML::System)
+        endif()
     elseif(MKW_PLATFORM_ANDROID)
         # The same object-library gap as above: the product link needs the libraries the runtime
         # objects call into. SDL's Android activity loads the product as libmain.so and runs its
@@ -356,20 +362,20 @@ else()
     message(STATUS "RetroRewind target disabled (run translate-mod and emit-build-shards)")
 endif()
 
-# Windows and Linux x86_64 share the x86-64-v3 floor that the CPU baseline
-# object above checks. AArch64 builds are compiled locally for the host that
-# will run them, so both Linux and Apple Silicon use the compiler's native CPU
-# tuning rather than leaving target-specific performance on the table.
-if(CMAKE_SYSTEM_PROCESSOR MATCHES "^(AMD64|amd64|x86_64|X86_64)$")
-    set(MKW_BASELINE_ARCH_FLAG -march=x86-64-v3)
-elseif(MKW_PLATFORM_ANDROID)
-    # Cross-compiled, so -mcpu=native would describe the build machine. ARMv8.2-A (LSE atomics,
-    # RCpc loads) is the floor of every Android phone since Cortex-A55/A75.
-    set(MKW_BASELINE_ARCH_FLAG -march=armv8.2-a)
-elseif(CMAKE_SYSTEM_PROCESSOR MATCHES "^(aarch64|arm64|ARM64)$")
-    set(MKW_BASELINE_ARCH_FLAG -mcpu=native)
-else()
-    set(MKW_BASELINE_ARCH_FLAG "")
+# Windows and Linux x86_64 share the baseline ISA floor (default x86-64-v2,
+# compatible with Ivy Bridge and newer, overridable with -march=ivybridge or -march=native).
+if(NOT DEFINED MKW_BASELINE_ARCH_FLAG)
+    if(CMAKE_SYSTEM_PROCESSOR MATCHES "^(AMD64|amd64|x86_64|X86_64)$")
+        set(MKW_BASELINE_ARCH_FLAG -march=x86-64-v2 CACHE STRING "Target host ISA")
+    elseif(MKW_PLATFORM_ANDROID)
+        # Cross-compiled, so -mcpu=native would describe the build machine. ARMv8.2-A (LSE atomics,
+        # RCpc loads) is the floor of every Android phone since Cortex-A55/A75.
+        set(MKW_BASELINE_ARCH_FLAG -march=armv8.2-a)
+    elseif(CMAKE_SYSTEM_PROCESSOR MATCHES "^(aarch64|arm64|ARM64)$")
+        set(MKW_BASELINE_ARCH_FLAG -mcpu=native)
+    else()
+        set(MKW_BASELINE_ARCH_FLAG "")
+    endif()
 endif()
 
 set(MKW_ALL_BUILD_TARGETS

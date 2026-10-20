@@ -141,7 +141,14 @@ inline bool BeginAuroraFrame() {
     return true;
 }
 
+#if defined(MKW_ENABLE_SFML)
+#include "platform/sfml_presenter.h"
+#endif
+
 // Poll Aurora events and update cached window/framebuffer dimensions.
 inline void UpdateAuroraAndProcessEvents() {
     ProcessAuroraEvents(aurora_update());
+#if defined(MKW_ENABLE_SFML)
+    SfmlPresenter::PollEvents();
+#endif
 }

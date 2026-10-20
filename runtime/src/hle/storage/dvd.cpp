@@ -1,4 +1,4 @@
-﻿#include "hle_stubs.h"
+#include "hle_stubs.h"
 #include "isa/big_endian.h"
 #include "hle/dvd_contract.h"
 #include "hle/runtime_parse_helpers.h"
@@ -1225,6 +1225,9 @@ PPC_NATIVE_OVERRIDE(801D2130, DVDLowUnencryptedRead_80165708, int32_t, (uint32_t
 
 extern "C" int32_t DVDCheckDevice_801643FC() { return 1; } // Ready
 PPC_NATIVE_OVERRIDE(801D0980, DVDCheckDevice_801643FC, int32_t, (), ());
+
+extern "C" int32_t DVDCheckDiskBca_HLE() { return 1; }
+PPC_NATIVE_OVERRIDE(801D0CF0, DVDCheckDiskBca_HLE, int32_t, (), ());
 
 extern "C" int32_t DVDLowClearCoverInterrupt_80166964(uint32_t cb) { return 1; }
 PPC_NATIVE_OVERRIDE(801D3700, DVDLowClearCoverInterrupt_80166964, int32_t, (uint32_t cb), (cb));

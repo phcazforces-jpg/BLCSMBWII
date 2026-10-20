@@ -9,6 +9,9 @@
 #include "ppc_runtime.h"
 #include "aurora_events.h"
 #include "settings_overlay.h"
+#if defined(MKW_ENABLE_SFML)
+#include "platform/sfml_presenter.h"
+#endif
 #include "fiber_manager.h"
 #include "platform/host_platform.h"
 #include "runtime_log.h"
@@ -909,6 +912,18 @@ void VI_HLE_PresentFrame(bool presentedXfb, bool paceToRetrace) {
 
     const Clock::time_point endFrameStart = Clock::now();
     aurora_end_frame();
+#if defined(MKW_ENABLE_SFML)
+    if (presentedXfb && g_vi.currentFrameBuffer != 0 && SfmlPresenter::IsEnabled()) {
+        try {
+            size_t xfbBytes = static_cast<size_t>(g_vi.xfbWidth) * g_vi.xfbHeight * 2;
+            void* xfbPtr = MemoryInline::GetPointerFast(g_vi.currentFrameBuffer, xfbBytes);
+            if (xfbPtr) {
+                SfmlPresenter::PresentXfb(xfbPtr, g_vi.xfbWidth, g_vi.xfbHeight);
+            }
+        } catch (...) {
+        }
+    }
+#endif
     const Clock::time_point paceStart = Clock::now();
     if (paceThisFrame) {
         PaceToRetraceBoundary(paceDeadline);

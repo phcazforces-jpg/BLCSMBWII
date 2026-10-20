@@ -1,4 +1,4 @@
-﻿// SPDX-License-Identifier: GPL-2.0-or-later
+// SPDX-License-Identifier: GPL-2.0-or-later
 //
 // Copyright 2018 Dolphin Emulator Project
 //
@@ -607,7 +607,11 @@ inline double PPC_PsMulNoNiInline(double lhs, double rhs)
 inline PpcPairVec PpcFmaddPairInline(PpcPairVec multiplicand, PpcPairVec multiplier, PpcPairVec addend)
 {
 #if defined(__x86_64__)
+#if defined(__FMA__)
     return _mm_fmadd_ps(multiplicand, multiplier, addend);
+#else
+    return _mm_add_ps(_mm_mul_ps(multiplicand, multiplier), addend);
+#endif
 #elif defined(__aarch64__)
     const PpcPairVec result = vfma_f32(addend, multiplicand, multiplier);
     if (PpcPairNanLaneBitsInline(result) != 0) [[unlikely]]
@@ -619,7 +623,11 @@ inline PpcPairVec PpcFmaddPairInline(PpcPairVec multiplicand, PpcPairVec multipl
 inline PpcPairVec PpcFmsubPairInline(PpcPairVec multiplicand, PpcPairVec multiplier, PpcPairVec subtractor)
 {
 #if defined(__x86_64__)
+#if defined(__FMA__)
     return _mm_fmsub_ps(multiplicand, multiplier, subtractor);
+#else
+    return _mm_sub_ps(_mm_mul_ps(multiplicand, multiplier), subtractor);
+#endif
 #elif defined(__aarch64__)
     const PpcPairVec result = vfma_f32(vneg_f32(subtractor), multiplicand, multiplier);
     if (PpcPairNanLaneBitsInline(result) != 0) [[unlikely]]

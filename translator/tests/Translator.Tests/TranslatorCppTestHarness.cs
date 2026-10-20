@@ -31,7 +31,7 @@ internal static class TranslatorCppTestHarness
         var args = new StringBuilder();
         args.Append("-std=c++17 ");
         args.Append("-D_CRT_SECURE_NO_WARNINGS ");
-        args.Append("-march=x86-64-v3 ");
+        args.Append("-march=x86-64-v2 ");
         args.Append("-fno-fast-math -ffp-contract=off ");
         if (!RuntimeHeadersDefineRestrictMacro(repoRoot))
         {

@@ -53,6 +53,15 @@ endif()
 
 option(MKW_BUILD_PRODUCTS "Build translated WiiCompiled product targets" ON)
 option(MKW_BUILD_PSQ_TESTS "Build focused PSQ ISA tests" OFF)
+option(MKW_ENABLE_SFML "Enable SFML 3 presentation fallback (Intel HD 4000 / Crocus)" ON)
+
+if(MKW_ENABLE_SFML)
+    find_package(SFML 3 COMPONENTS Graphics Window System QUIET)
+    if(SFML_FOUND)
+        message(STATUS "Found SFML ${SFML_VERSION} - SFML 3 presentation fallback enabled")
+        add_compile_definitions(MKW_ENABLE_SFML)
+    endif()
+endif()
 
 # Preprocessor definitions that belong to this project's own code (the runtime,
 # the translated shards and the product glue) and to nothing else. They are
@@ -244,6 +253,9 @@ else()
     else()
         set(DAWN_ENABLE_D3D12 OFF CACHE BOOL "" FORCE)
         set(DAWN_ENABLE_VULKAN ON CACHE BOOL "" FORCE)
+        set(DAWN_ENABLE_DESKTOP_GL ON CACHE BOOL "" FORCE)
+        set(DAWN_ENABLE_OPENGLES ON CACHE BOOL "" FORCE)
+        set(DAWN_ENABLE_NULL ON CACHE BOOL "" FORCE)
         set(DAWN_ENABLE_METAL OFF CACHE BOOL "" FORCE)
         set(TINT_BUILD_HLSL_WRITER OFF CACHE BOOL "" FORCE)
     endif()
@@ -386,7 +398,7 @@ if(MKW_BUILD_PSQ_TESTS)
     target_compile_options(mkw_psq_helpers_tests PRIVATE
         -O2 ${MKW_TRANSLATED_PPC_FP_OPTIONS} -fno-slp-vectorize)
     if(CMAKE_SYSTEM_PROCESSOR MATCHES "^(AMD64|amd64|x86_64|X86_64)$")
-        target_compile_options(mkw_psq_helpers_tests PRIVATE -march=x86-64-v3)
+        target_compile_options(mkw_psq_helpers_tests PRIVATE -march=x86-64-v2)
     endif()
     set_target_properties(mkw_psq_helpers_tests PROPERTIES UNITY_BUILD OFF)
     add_test(NAME mkw_psq_helpers_tests COMMAND mkw_psq_helpers_tests)
@@ -544,7 +556,7 @@ else()
             # Keep this compile-only audit on the same Haswell-era x86-64-v3
             # baseline as the translated product. PPC paired FMA helpers use
             # FMA intrinsics and intentionally cannot compile for plain x86-64.
-            target_compile_options(mkw_macos_native_compile PRIVATE -march=x86-64-v3)
+            target_compile_options(mkw_macos_native_compile PRIVATE -march=x86-64-v2)
         endif()
         set_target_properties(mkw_macos_native_compile PROPERTIES UNITY_BUILD OFF)
     endif()

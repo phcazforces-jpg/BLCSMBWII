@@ -630,12 +630,12 @@ constexpr std::array PreferredBackendOrder{
 #if !defined(_WIN32) && defined(DAWN_ENABLE_BACKEND_D3D11)
     BACKEND_D3D11,
 #endif
-// #ifdef DAWN_ENABLE_BACKEND_DESKTOP_GL
-//     BACKEND_OPENGL,
-// #endif
-// #ifdef DAWN_ENABLE_BACKEND_OPENGLES
-//     BACKEND_OPENGLES,
-// #endif
+#ifdef DAWN_ENABLE_BACKEND_DESKTOP_GL
+    BACKEND_OPENGL,
+#endif
+#ifdef DAWN_ENABLE_BACKEND_OPENGLES
+    BACKEND_OPENGLES,
+#endif
 #ifdef DAWN_ENABLE_BACKEND_NULL
     BACKEND_NULL,
 #endif
@@ -736,6 +736,15 @@ AuroraInfo initialize(int argc, char* argv[], const AuroraConfig& config) noexce
         rememberGraphicsError();
         window::destroy_window();
       }
+    }
+  }
+
+  if (!windowCreated) {
+    Log.warn("No hardware WebGPU graphics backend initialized; attempting Null/presentation fallback");
+    if (window::create_window(BACKEND_NULL)) {
+      window::create_renderer();
+      selectedBackend = BACKEND_NULL;
+      windowCreated = true;
     }
   }
 

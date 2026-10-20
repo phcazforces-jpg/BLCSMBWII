@@ -11,6 +11,9 @@
 #endif
 #include <windows.h>
 #include <shobjidl.h>
+#elif defined(__linux__)
+#include <unistd.h>
+#include <climits>
 #endif
 
 namespace GameFolder {
@@ -21,6 +24,24 @@ namespace fs = std::filesystem;
 bool IsExtractedDisc(const fs::path& path) {
     std::error_code ec;
     return fs::is_directory(path / "files", ec) && fs::is_regular_file(path / "sys" / "fst.bin", ec);
+}
+
+fs::path ProgramDirectory() {
+#if defined(_WIN32)
+    wchar_t exe[MAX_PATH] = {};
+    GetModuleFileNameW(nullptr, exe, MAX_PATH);
+    return fs::path(exe).parent_path();
+#elif defined(__linux__)
+    char exe[PATH_MAX] = {};
+    ssize_t len = ::readlink("/proc/self/exe", exe, sizeof(exe) - 1);
+    if (len > 0) {
+        exe[len] = '\0';
+        return fs::path(exe).parent_path();
+    }
+    return fs::current_path();
+#else
+    return fs::current_path();
+#endif
 }
 
 #if defined(_WIN32)
@@ -35,12 +56,6 @@ constexpr const wchar_t* kSteps =
     L"4. Click OK here and choose that folder. Keep it: the game reads it every time.\n\n"
     L"(Dolphin shows the revision under Properties > Info. Or put the extracted folder next to this "
     L"program and name it \"game\".)";
-
-fs::path ProgramDirectory() {
-    wchar_t exe[MAX_PATH] = {};
-    GetModuleFileNameW(nullptr, exe, MAX_PATH);
-    return fs::path(exe).parent_path();
-}
 
 // The Windows folder picker; empty when cancelled.
 fs::path PickFolder() {
@@ -118,20 +133,34 @@ std::string Problem(const fs::path& root) {
 }
 
 bool EnsureConfigured() {
-#if defined(_WIN32)
-    // A "game" folder next to the program needs no questions, and wins over the saved folder: every
-    // install shares Documents\MarioWiiSaveData, so this is how two installs play two games (say the
-    // original and a mod), each with its own saves (nand_path.h keeps saves per game).
-    if (const fs::path beside = Find(ProgramDirectory() / "game"); !beside.empty() && Problem(beside).empty()) {
-        if (RuntimeConfigFile::DvdRoot().empty()) {
-            RuntimeConfigFile::SetDvdRoot(beside);
-        } else {
-            RuntimeConfigFile::UseDvdRootForThisRun(beside);
+    for (const fs::path& candidate : {
+        fs::current_path() / "extracted_disc",
+        fs::current_path() / "extracted_disc/DATA",
+        fs::current_path() / "game",
+        fs::current_path() / "../game",
+        fs::current_path() / "../extracted_disc",
+        fs::current_path() / "../extracted_disc/DATA",
+        ProgramDirectory() / "extracted_disc",
+        ProgramDirectory() / "extracted_disc/DATA",
+        ProgramDirectory() / "game",
+        ProgramDirectory().parent_path() / "extracted_disc",
+        ProgramDirectory().parent_path() / "extracted_disc/DATA",
+        ProgramDirectory().parent_path() / "game",
+        fs::current_path() / "../wiigames/extracted_nsmbw",
+        fs::current_path() / "../wiigames/extracted_nsmbw/DATA",
+        fs::path("/home/pedroc/Downloads/wiigames/extracted_nsmbw"),
+        fs::path("/home/pedroc/Downloads/wiigames/extracted_nsmbw/DATA"),
+    }) {
+        if (const fs::path beside = Find(candidate); !beside.empty() && Problem(beside).empty()) {
+            if (RuntimeConfigFile::DvdRoot().empty()) {
+                RuntimeConfigFile::SetDvdRoot(beside);
+            } else {
+                RuntimeConfigFile::UseDvdRootForThisRun(beside);
+            }
+            RT_LOGF(RT_TAG_RUNTIME, "game folder: %s\n", RuntimeConfigFile::PathToUtf8(beside).c_str());
+            return true;
         }
-        RT_LOGF(RT_TAG_RUNTIME, "game folder: %s\n", RuntimeConfigFile::PathToUtf8(beside).c_str());
-        return true;
     }
-#endif
     const fs::path configured = Find(RuntimeConfigFile::ResolvedDvdRoot());
     if (!configured.empty() && Problem(configured).empty()) {
         return true;

@@ -13,8 +13,10 @@ import struct
 import sys
 from pathlib import Path
 
-RELS = ("d_profileNP", "d_basesNP", "d_enemiesNP", "d_en_bossNP")
-MAIN_DOL_SHA256 = "6d755ec24c395fee600a856a85785e0e99c0b7ecb680d573a6cdd1aa6f7beee7"
+MAIN_DOL_SHA256 = (
+    "6d755ec24c395fee600a856a85785e0e99c0b7ecb680d573a6cdd1aa6f7beee7",
+    "166eb6b7cca21418e316a6cfbf1bfbf0a213eb8f6396d42126a1482bb764a955",
+)
 DEFAULT_OUT = Path(__file__).resolve().parents[3].parent / "game"
 
 
@@ -76,7 +78,7 @@ def main() -> None:
         sys.exit(f"this is {header[:6].decode('ascii', 'replace')} revision {header[7]}; "
                  "the port needs New Super Mario Bros. Wii SMNE01 revision 1")
     dol = (root / "sys" / "main.dol").read_bytes()
-    if hashlib.sha256(dol).hexdigest() != MAIN_DOL_SHA256:
+    if hashlib.sha256(dol).hexdigest() not in MAIN_DOL_SHA256:
         sys.exit("sys/main.dol differs from the clean SMNE01 rev 1 executable (modified game?)")
     out.mkdir(parents=True, exist_ok=True)
     shutil.copyfile(root / "sys" / "main.dol", out / "main.dol")
